@@ -1,0 +1,46 @@
+#!/bin/sh 
+
+# A default URL to try 
+URL="tftp://10.0.0.1/{mac}/overlay.tar.gz"
+
+# Get the URL from the overlay config file if it exists
+[ -r /etc/default/overlay ] && . /etc/default/overlay
+
+# Get the MAC address from eth0
+MAC=`cat /sys/class/net/eth0/address | tr -d :`
+
+# Generate the full URL substring the {mac} for $MAC
+URL=$(echo "$URL" | sed "s/{mac}/$MAC/")
+
+# Dirty way to get the address we're connecting to
+IP=$(echo "$URL" | sed -ne 's/^.*:\/\/\([^\/]*\).*/\1/p')
+
+# Get the full path
+FILEPATH=$(echo "$URL" | sed -ne 's/^.*:\/\/[^\/]*\(.*\)/\1/p')
+
+# Get just the filename
+FILE=$(basename $URL)
+
+if [ ${URL:0:4} = "http" ]; then
+  echo [HTTP] Getting $URL
+  wget -q -O /tmp/$FILE $URL
+elif [ ${URL:0:4} = "tftp" ]; then
+  echo [TFTP] Getting $URL
+  tftp -g -l /tmp/$FILE -r $FILEPATH $IP
+fi
+
+RETVAL=$?
+if [ $RETVAL -eq 0 ]; then
+  zcat /tmp/$FILE | tar -C / -xf -
+  RETVAL=$?
+elif [ $RETVAL -ne 0 ]; then
+  echo Failed to download file
+fi 
+
+if [ $RETVAL -eq 0 ]; then
+  echo Success
+elif [ $RETVAL -ne 0 ]; then
+  echo Failed to apply file
+fi 
+
+rm /tmp/$FILE

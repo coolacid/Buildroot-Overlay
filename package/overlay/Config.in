@@ -1,0 +1,13 @@
+config BR2_PACKAGE_OVERLAY
+	bool "Overlay filesystem"
+	help
+	  Allows a user to overlay a filesystem. Typically used when PXE booting an image.
+
+if BR2_PACKAGE_OVERLAY
+
+config BR2_PACKAGE_OVERLAY_URL
+        string "Configuration URL"
+        help
+            Replaces {mac} with the MAC address of the device
+            example: tftp://someipaddress/configs/{mac}/overlay.tar.gz
+endif

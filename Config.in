@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_OVERLAY_PATH/package/overlay/Config.in"
